@@ -10,7 +10,9 @@ TMP          = ../tmp/$$TARGET
 OBJECTS_DIR  = $$TMP/obj
 MOC_DIR      = $$TMP/moc
 
-FORMS       += forms/wtdlg.ui
+FORMS       += forms/wtdlg.ui \
+               forms/testdlg.ui \
+               forms/remarkdlg.ui
 
 HEADERS     += mainwin.h \
                displaysetting.h \
@@ -19,7 +21,9 @@ HEADERS     += mainwin.h \
                eventchild.h \
                textchild.h \
 	       wtdlg.h \
-	       alarmevent.h
+	       testdlg.h \
+	       remarkdlg.h \
+	       alarmevent.h 
 
 SOURCES     += main.cpp \
                displaysetting.cpp \
@@ -29,6 +33,8 @@ SOURCES     += main.cpp \
                eventchild.cpp \
                textchild.cpp \
 	       wtdlg.cpp \
+	       remarkdlg.cpp \
+	       testdlg.cpp \
 	       alarmevent.cpp
 
 RESOURCES   += xalm.qrc

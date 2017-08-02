@@ -11,6 +11,7 @@ public:
 
 protected:
     virtual void closeEvent(QCloseEvent *event);
+    virtual void customEvent(QEvent* event);
 
 private slots:
     void newChild();
@@ -21,12 +22,13 @@ private slots:
     void cut();
     void copy();
     void paste();
-    
+
     void opt();
     void colorSetting();
 
     void about();
     void test();
+    void testAuto();
 
     void updateMenus();
     void updateWindowMenu();
@@ -77,6 +79,7 @@ private:
 
     QMenu *helpMenu;
     QAction *aboutAct;
+    QAction *testAutoAct;
     QAction *testAct;
 };
 

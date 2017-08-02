@@ -1,11 +1,14 @@
+#include <iostream>
 #include <mdichild.h>
 #include <alarmchild.h>
 #include <eventchild.h>
 #include <textchild.h>
+#include <testdlg.h>
 #include <wtdlg.h>
 #include <displaysetting.h>
-
 #include <mainwin.h>
+
+using namespace std;
 
 /// 默认构造
 MainWin::MainWin(QWidget* parent/*=0*/, Qt::WindowFlags flags/*=0*/) : QMainWindow(parent, flags)
@@ -40,6 +43,22 @@ void MainWin::closeEvent(QCloseEvent *event)
     {
         writeSettings();
         event->accept();
+    }
+}
+
+/// 事件派发
+void MainWin::customEvent(QEvent* event)
+{
+    AlarmEvent* almevent = dynamic_cast<AlarmEvent*>(event);
+    if (almevent)
+    {
+        AlarmData data = almevent->data(); 
+	foreach (QMdiSubWindow *window, mdiArea->subWindowList())
+        {
+            MdiChild *mdiChild = dynamic_cast<MdiChild*>(window->widget());
+            if (mdiChild && mdiChild->mdiType() != MdiChild::Text)
+                QCoreApplication::postEvent(window->widget(), new AlarmEvent(data, event->type()));
+        }
     }
 }
 
@@ -229,8 +248,13 @@ void MainWin::createActions()
     aboutAct->setStatusTip(QString::fromLocal8Bit("关于该应用"));
     connect(aboutAct, SIGNAL(triggered()), this, SLOT(about()));
 
-    testAct = new QAction(QIcon(":/images/alarm.png"), QString::fromLocal8Bit("测试"), this);
-    testAct->setStatusTip(QString::fromLocal8Bit("模拟生成生成一个报警"));
+    testAutoAct = new QAction(QIcon(":/images/alarm.png"), QString::fromLocal8Bit("测试"), this);
+    testAutoAct->setCheckable(true);
+    testAutoAct->setStatusTip(QString::fromLocal8Bit("模拟生成一个报警"));
+    connect(testAutoAct, SIGNAL(triggered()), this, SLOT(testAuto()));
+
+    testAct = new QAction(QIcon(":/images/alarm.png"), QString::fromLocal8Bit("报警模拟器"), this);
+    testAct->setStatusTip(QString::fromLocal8Bit("报警模拟器"));
     connect(testAct, SIGNAL(triggered()), this, SLOT(test()));
 }
 
@@ -253,6 +277,8 @@ void MainWin::createMenus()
     toolsMenu = menuBar()->addMenu(QString::fromLocal8Bit("工具(&T)"));
     toolsMenu->addAction(colorAct);
     toolsMenu->addAction(optAct);
+    toolsMenu->addSeparator();
+    toolsMenu->addAction(testAct);
 
     windowMenu = menuBar()->addMenu(QString::fromLocal8Bit("窗口(&W)"));
     updateWindowMenu();
@@ -268,7 +294,7 @@ void MainWin::createToolBars()
 {
     fileToolBar = addToolBar(QString::fromLocal8Bit("标准"));
     fileToolBar->addAction(newAct);
-    fileToolBar->addAction(testAct);
+    fileToolBar->addAction(testAutoAct);
 }
 
 void MainWin::createStatusBar()
@@ -404,17 +430,6 @@ void MainWin::paste()
     }
 }
 
-void MainWin::test()
-{
-    QSharedPointer<AlarmData> event(AlarmData::createAlarmData());
-    foreach (QMdiSubWindow *window, mdiArea->subWindowList())
-    {
-        MdiChild *mdiChild = dynamic_cast<MdiChild*>(window->widget());
-        if (mdiChild && mdiChild->mdiType() != MdiChild::Text)
-	    QCoreApplication::postEvent(window->widget(), new AlarmEvent(*event.data()));
-    }
-}
-
 void MainWin::colorSetting()
 {
 }
@@ -422,3 +437,31 @@ void MainWin::colorSetting()
 void MainWin::opt()
 {
 }
+
+void MainWin::test()
+{
+    static TestDlg* dlg = NULL;
+    if (dlg == NULL)
+        dlg = new TestDlg(this);
+
+    dlg->init();
+    dlg->show();
+}
+
+void MainWin::testAuto()
+{
+    int type = AlarmEvent::NEW;
+    QSharedPointer<AlarmData> ptr(AlarmData::createAlarmData());
+
+    foreach (QMdiSubWindow *window, mdiArea->subWindowList())
+    {
+        MdiChild *mdiChild = dynamic_cast<MdiChild*>(window->widget());
+        if (mdiChild && mdiChild->mdiType() != MdiChild::Text)
+            QCoreApplication::postEvent(window->widget(), new AlarmEvent(*ptr.data(), (QEvent::Type)type));
+    }
+
+    /// 连续触发
+    if (testAutoAct->isChecked())
+        QTimer::singleShot(1000, this, SLOT(testAuto()));
+}
+
